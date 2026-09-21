@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#151719">
+  <meta name="description" content="Recorte sprites e assets de jogos, refine os contornos e exporte PNGs diretamente no navegador.">
+  <title>CropPNG · Asset Studio</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23c5f275'/%3E%3Cpath d='M10 5v17h17M5 10h17v17' fill='none' stroke='%23151719' stroke-width='3'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="CropPNG início"><span class="brand-icon">⌗</span>Crop<span>PNG</span><small>ASSET STUDIO</small></a>
+    <span class="local-badge"><span></span> Processamento no seu navegador</span>
+    <button class="button" id="upload"><span aria-hidden="true">↥</span> Abrir imagem</button>
+    <input type="file" id="file" accept="image/png,image/jpeg,image/webp" hidden>
+    <button class="button primary" id="export-all" disabled>Exportar assets <span id="export-count">0</span></button>
+  </header>
+  <main class="app">
+    <aside class="sidebar">
+      <div class="section-heading"><h1>Seus assets</h1><span id="asset-count" class="count">0</span></div>
+      <div class="source-info"><span class="file-icon">▧</span><div><strong id="filename">Carregando exemplo…</strong><span id="dimensions">PNG · imagem original</span></div></div>
+      <div class="list-actions"><button id="detect" class="button full">▦ Detectar em fundo transparente</button><p>Separa peças que não se tocam em PNGs com transparência.</p></div>
+      <div id="asset-list" class="asset-list"></div>
+      <div id="empty-list" class="empty-list"><div class="empty-symbol">⌗</div><h2>Uma imagem.<br>Muitas possibilidades.</h2><p>Marque uma peça na imagem para criar seu primeiro asset.</p><span>01 &nbsp; Marque &nbsp; → &nbsp; 02 &nbsp; Ajuste &nbsp; → &nbsp; 03 &nbsp; Exporte</span></div>
+      <div class="sidebar-bottom"><span class="key">Ctrl Z</span> Desfazer <button id="example" class="text-button">Usar exemplo</button></div>
+    </aside>
+    <section class="workspace" aria-label="Área de recorte">
+      <div class="workspace-header"><div class="breadcrumb">WORKSPACE <span>/</span> <strong id="workspace-name">teste.png</strong></div><span class="sample-tag" id="sample-tag">IMAGEM DE EXEMPLO</span></div>
+      <div class="toolbar" role="toolbar" aria-label="Ferramentas de seleção">
+        <div class="tool-group">
+          <button class="tool" data-mode="select" title="Selecionar e mover (V)"><span>↖</span> Mover</button>
+          <button class="tool active" data-mode="rect" title="Arraste para criar um retângulo (R)"><span>□</span> Retângulo</button>
+          <button class="tool" data-mode="polygon" title="Clique ao redor da peça e pressione Enter (P)"><span>⬡</span> Contorno</button>
+          <button class="tool" data-mode="wand" title="Selecionar uma região por cor ou transparência (W)"><span>✧</span> Varinha</button>
+        </div>
+        <div class="tool-group history"><button id="undo" title="Desfazer (Ctrl+Z)" aria-label="Desfazer">↶</button><button id="redo" title="Refazer (Ctrl+Shift+Z)" aria-label="Refazer">↷</button></div>
+      </div>
+      <div class="mode-help" id="mode-help">Arraste sobre uma peça para recortar. Depois, ajuste as bordas.</div>
+      <div class="wand-controls" id="wand-controls" hidden><label>Tolerância <input id="tolerance" type="range" min="5" max="160" value="65"><output id="tolerance-value">65</output></label><span>Seleciona pixels conectados com cores próximas. Em fundo transparente, seleciona a peça inteira.</span></div>
+      <div class="stage" id="stage" tabindex="0" aria-label="Imagem para selecionar assets. Use as ferramentas ou ajuste coordenadas no painel lateral.">
+        <div class="image-wrap" id="image-wrap"><img id="source-image" alt="Imagem original com os assets a recortar" draggable="false"><svg id="overlay" xmlns="http://www.w3.org/2000/svg" aria-label="Seleções de assets"></svg></div>
+        <div id="loading" class="loading">Preparando a imagem…</div>
+      </div>
+      <div class="workspace-footer"><span id="selection-status">Nenhum asset selecionado</span><div class="zoom"><button id="zoom-out" aria-label="Diminuir zoom">−</button><span id="zoom-value">100%</span><button id="zoom-in" aria-label="Aumentar zoom">+</button><button id="fit">Ajustar à tela</button></div></div>
+      <div class="tip"><span>✦</span><p><strong>Fundo com brilhos ou várias cores?</strong> Use <b>Contorno</b> para marcar a silhueta. O exterior fica transparente no PNG.</p><button id="finish-polygon" class="button" hidden>Concluir contorno ↵</button></div>
+    </section>
+    <aside class="inspector">
+      <div class="section-heading"><h2>Refinar & exportar</h2><span class="small-label">PNG</span></div>
+      <div id="inspector-empty" class="inspector-empty"><div class="preview-placeholder">⌗</div><p>Seu recorte aparece aqui.<br>Selecione um asset para ajustar.</p></div>
+      <div id="inspector-content" hidden>
+        <div class="preview checker"><canvas id="preview"></canvas></div>
+        <div class="preview-meta"><span id="preview-size"></span><span id="shape-label"></span></div>
+        <label class="field">Nome do asset<input id="asset-name" type="text" maxlength="80" autocomplete="off"></label>
+        <div class="inspector-section"><h3>Limites do recorte <span>px</span></h3><div class="bounds-grid"><label>X<input id="bound-x" type="number" min="0"></label><label>Y<input id="bound-y" type="number" min="0"></label><label>Largura<input id="bound-w" type="number" min="1"></label><label>Altura<input id="bound-h" type="number" min="1"></label></div><p id="bounds-help">Arraste os cantos na imagem ou ajuste os valores.</p></div>
+        <div class="inspector-section"><label class="padding-label" for="padding">Margem transparente <span><output id="padding-value">0</output> px</span></label><input id="padding" type="range" min="0" max="64" value="0"></div>
+        <div class="inspector-section"><label class="checkbox-label"><input type="checkbox" id="remove-bg"> Remover fundo simples</label><p>Remove cores parecidas com as bordas do recorte. Confira a prévia antes de exportar.</p><label id="bg-controls" class="padding-label" hidden>Tolerância <input id="bg-tolerance" type="range" min="5" max="100" value="30"></label></div>
+        <button class="button primary full" id="download">↓ Baixar este PNG</button>
+        <button class="button danger full" id="delete">Excluir asset</button>
+      </div>
+      <div class="inspector-note"><span>◈</span><p>Os recortes mantêm a resolução original. O zoom só altera a visualização.</p></div>
+    </aside>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <dialog id="replace-dialog"><form method="dialog"><h2>Abrir outra imagem?</h2><p>Os recortes atuais serão substituídos. Exporte os assets que deseja guardar antes de continuar.</p><div class="dialog-actions"><button value="cancel" class="button">Cancelar</button><button value="replace" class="button primary">Substituir imagem</button></div></form></dialog>
+</body>
+</html>
