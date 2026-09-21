@@ -20,7 +20,9 @@ Abra http://localhost:4173. É necessário servir os arquivos via HTTP para carr
 4. **Contorno (P)**: clique ao redor da silhueta, pressione Enter ou clique no primeiro ponto para concluir. O exterior do contorno fica transparente. Em **Mover (V)**, arraste seus pontos para refinar. Backspace remove o último ponto durante o desenho; Esc cancela.
 5. **Varinha (W)**: clique em uma região. Se houver transparência, seleciona o componente conectado. Em imagens opacas, seleciona cores próximas à cor do clique; ajuste a tolerância e clique novamente. Não é segmentação semântica por IA.
 6. Selecione cada asset, renomeie, ajuste coordenadas e margem transparente. A remoção opcional de fundo usa as cores dos cantos do recorte; confira a prévia, especialmente em fundos com gradientes ou brilho.
-7. Baixe um PNG ou use as caixas de seleção para exportar os assets desejados em um ZIP. Nomes repetidos recebem sufixos para não se sobrescreverem.
+7. Marque os assets desejados nas caixas de seleção, ou use **Selecionar todos**. Clique em **Baixar PNGs** para iniciar o download de cada imagem separadamente, ou em **Baixar ZIP** para receber um único arquivo com todos os PNGs. Os dois botões mostram a quantidade selecionada. Nomes repetidos recebem sufixos para não se sobrescreverem.
+
+Ao baixar PNGs separados, o navegador pode solicitar permissão para vários downloads. Permita-os para este site; se algum arquivo for bloqueado, a opção **Baixar ZIP** exporta o mesmo conjunto em um só download. O navegador controla o salvamento, por isso a confirmação da ferramenta indica downloads solicitados, não arquivos já salvos.
 
 Ctrl/Cmd+Z desfaz, Ctrl/Cmd+Shift+Z refaz, Delete exclui a seleção. Os recortes são temporários e não persistem após fechar/recarregar a página; há aviso antes de sair. Abrir outra imagem solicita confirmação quando existem recortes.
 

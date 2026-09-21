@@ -15,13 +15,19 @@
     <span class="local-badge"><span></span> Processamento no seu navegador</span>
     <button class="button" id="upload"><span aria-hidden="true">↥</span> Abrir imagem</button>
     <input type="file" id="file" accept="image/png,image/jpeg,image/webp" hidden>
-    <button class="button primary" id="export-all" disabled>Exportar assets <span id="export-count">0</span></button>
+    <button class="button" id="export-all" disabled>Baixar ZIP <span id="export-count">0</span></button>
+    <button class="button primary" id="export-pngs" aria-describedby="batch-help" disabled>Baixar PNGs <span id="png-count">0</span></button>
   </header>
   <main class="app">
     <aside class="sidebar">
       <div class="section-heading"><h1>Seus assets</h1><span id="asset-count" class="count">0</span></div>
       <div class="source-info"><span class="file-icon">▧</span><div><strong id="filename">Carregando exemplo…</strong><span id="dimensions">PNG · imagem original</span></div></div>
       <div class="list-actions"><button id="detect" class="button full">▦ Detectar em fundo transparente</button><p>Separa peças que não se tocam em PNGs com transparência.</p></div>
+      <div class="batch-selection" id="batch-selection" hidden>
+        <label class="checkbox-label"><input type="checkbox" id="select-all"> Selecionar todos</label>
+        <p id="selected-count" role="status"></p>
+        <p id="batch-help">Marque os assets e escolha PNGs separados ou ZIP. Para PNGs, o navegador pode pedir permissão para vários downloads.</p>
+      </div>
       <div id="asset-list" class="asset-list"></div>
       <div id="empty-list" class="empty-list"><div class="empty-symbol">⌗</div><h2>Uma imagem.<br>Muitas possibilidades.</h2><p>Marque uma peça na imagem para criar seu primeiro asset.</p><span>01 &nbsp; Marque &nbsp; → &nbsp; 02 &nbsp; Ajuste &nbsp; → &nbsp; 03 &nbsp; Exporte</span></div>
       <div class="sidebar-bottom"><span class="key">Ctrl Z</span> Desfazer <button id="example" class="text-button">Usar exemplo</button></div>

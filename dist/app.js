@@ -1,4 +1,4 @@
-import { clamp, boundsOf, hasTransparency, selectConnected, detectComponents, removeCornerBackground, safeName, makeZip } from './core.mjs';
+import { clamp, boundsOf, hasTransparency, selectConnected, detectComponents, removeCornerBackground, safeName, createExportPlan, makeZip } from './core.mjs';
 
 const $ = id => document.getElementById(id);
 const image = $('source-image'), overlay = $('overlay'), stage = $('stage');
@@ -11,7 +11,7 @@ const snapshot = () => ({ assets: state.assets.map(a => ({ ...a, points: a.point
 function checkpoint() { state.undo.push(snapshot()); if (state.undo.length > 35) state.undo.shift(); state.redo = []; state.dirty = true; }
 function restore(from, to) { if (!from.length || state.busy) return; to.push(snapshot()); Object.assign(state, from.pop()); state.points = []; state.drag = null; render(); }
 function toast(message) { clearTimeout(toastTimer); $('toast').textContent = message; $('toast').hidden = false; toastTimer = setTimeout(() => { $('toast').hidden = true; }, 5500); }
-function busy(value, message = 'Analisando a imagem…') { state.busy = value; $('loading').hidden = !value; $('loading').textContent = message; $('upload').disabled = value; $('detect').disabled = value || !state.pixels; renderCounts(); }
+function busy(value, message = 'Analisando a imagem…') { state.busy = value; $('loading').hidden = !value; $('loading').textContent = message; $('upload').disabled = value; $('example').disabled = value; $('download').disabled = value; $('detect').disabled = value || !state.pixels; renderCounts(); }
 const nextFrame = () => new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)));
 function setZoom(value, fitted = false) {
   if (!image.naturalWidth) return;
@@ -41,7 +41,15 @@ function renderCounts() {
   const count = state.assets.filter(a => a.included).length;
   $('asset-count').textContent = state.assets.length;
   $('export-count').textContent = count;
+  $('png-count').textContent = count;
   $('export-all').disabled = !count || state.busy;
+  $('export-pngs').disabled = !count || state.busy;
+  $('batch-selection').hidden = !state.assets.length;
+  $('selected-count').textContent = `${count} de ${state.assets.length} selecionados`;
+  $('select-all').checked = count > 0 && count === state.assets.length;
+  $('select-all').indeterminate = count > 0 && count < state.assets.length;
+  $('select-all').disabled = state.busy;
+  document.querySelectorAll('.asset-card input[type="checkbox"]').forEach(box => { box.disabled = state.busy; });
   $('undo').disabled = !state.undo.length || state.busy;
   $('redo').disabled = !state.redo.length || state.busy;
   $('empty-list').hidden = state.assets.length > 0;
@@ -285,24 +293,41 @@ for (const [id, prop] of [['padding', 'padding'], ['bg-tolerance', 'bgTolerance'
 $('remove-bg').onchange = () => { const a = current(); if (a) { checkpoint(); updateAsset(a.id, { removeBg: $('remove-bg').checked }); } };
 function deleteSelected() { const a = current(); if (!a) return; checkpoint(); state.assets = state.assets.filter(item => item.id !== a.id); state.selected = state.assets.at(-1)?.id ?? null; render(); toast('Asset removido. Ctrl+Z para desfazer.'); }
 $('delete').onclick = deleteSelected;
+$('select-all').onchange = () => {
+  if (state.busy || !state.assets.length) return;
+  const included = $('select-all').checked;
+  checkpoint(); state.assets = state.assets.map(asset => ({ ...asset, included })); render();
+};
 const pngBlob = canvas => new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Falha ao criar PNG.')), 'image/png'));
 function downloadBlob(blob, name) { const url = URL.createObjectURL(blob), link = document.createElement('a'); link.href = url; link.download = name; document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 30000); }
 $('download').onclick = async () => { const a = current(); if (!a) return; try { downloadBlob(await pngBlob(assetCanvas(a)), `${safeName(a.name)}.png`); toast('PNG preparado para download.'); } catch (error) { toast(error.message); } };
-$('export-all').onclick = async () => {
-  const selected = state.assets.filter(a => a.included); if (!selected.length || state.busy) return;
+async function exportAssets(format) {
+  const plan = createExportPlan(state.assets); if (!plan.length || state.busy) return;
+  const sourceName = state.filename;
+  let requested = 0;
   busy(true, 'Preparando os PNGs…'); await nextFrame();
   try {
-    const files = [], names = new Set();
-    for (const a of selected) {
-      const base = safeName(a.name); let name = `${base}.png`, counter = 2;
-      while (names.has(name.toLowerCase())) name = `${base}_${counter++}.png`; names.add(name.toLowerCase());
-      files.push({ name, bytes: new Uint8Array(await (await pngBlob(assetCanvas(a))).arrayBuffer()) });
+    const files = [];
+    for (const [index, { asset, name }] of plan.entries()) {
+      $('loading').textContent = `Preparando PNG ${index + 1} de ${plan.length}…`;
+      const blob = await pngBlob(assetCanvas(asset));
+      if (format === 'png') {
+        downloadBlob(blob, name); requested++;
+        // Space out requests; the browser still controls permission and actual saving.
+        if (index < plan.length - 1) await new Promise(resolve => setTimeout(resolve, 300));
+      } else files.push({ name, bytes: new Uint8Array(await blob.arrayBuffer()) });
     }
-    downloadBlob(makeZip(files), `${safeName(state.filename.replace(/\.[^.]+$/, ''))}_assets.zip`);
-    toast(`${selected.length} PNGs preparados em um ZIP.`);
-  } catch (error) { toast(`Não foi possível exportar: ${error.message}`); }
+    if (format === 'zip') {
+      downloadBlob(makeZip(files), `${safeName(sourceName.replace(/\.[^.]+$/, ''))}_assets.zip`);
+      toast(`${plan.length} PNGs preparados em um ZIP.`);
+    } else {
+      toast(`Downloads de ${requested} PNGs solicitados. Se o navegador bloquear algum, permita vários downloads ou use Baixar ZIP.`);
+    }
+  } catch (error) { toast(`${requested ? `${requested} downloads já solicitados. ` : ''}Não foi possível concluir a exportação: ${error.message}`); }
   finally { busy(false); }
-};
+}
+$('export-all').onclick = () => exportAssets('zip');
+$('export-pngs').onclick = () => exportAssets('png');
 window.addEventListener('keydown', e => {
   if ($('replace-dialog').open || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName) || e.target.isContentEditable) return;
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); restore(e.shiftKey ? state.redo : state.undo, e.shiftKey ? state.undo : state.redo); return; }

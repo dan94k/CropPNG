@@ -1,9 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { writeFile } from 'node:fs/promises';
-import { selectConnected, detectComponents, removeCornerBackground, makeZip, crc32, safeName } from '../dist/core.mjs';
+import { selectConnected, detectComponents, removeCornerBackground, makeZip, crc32, safeName, createExportPlan } from '../dist/core.mjs';
 function pixels(w, h, fill = [0, 0, 0, 0]) { const a = new Uint8ClampedArray(w*h*4); for(let p=0;p<w*h;p++) a.set(fill,p*4); return a; }
 function pixel(a, w, x, y, color) { a.set(color,(y*w+x)*4); }
+test('batch export excludes unchecked assets and prevents filename collisions after sanitization', () => {
+ const assets = [
+  { name: 'ouro', included: true }, { name: 'ignorado', included: false },
+  { name: 'OURO', included: true }, { name: 'ouro_2', included: true },
+  { name: 'péça', included: true }, { name: 'peca', included: true }
+ ];
+ const before = structuredClone(assets), plan = createExportPlan(assets);
+ assert.deepEqual(plan.map(p => p.name), ['ouro.png', 'OURO_2.png', 'ouro_2_2.png', 'peca.png', 'peca_2.png']);
+ assert.deepEqual(assets, before);
+ assert.deepEqual(createExportPlan([{ name: 'nenhum', included: false }]), []);
+});
 test('alpha components keep multicolor and diagonal-connected sprites, isolate neighbors',()=>{
  const data=pixels(8,6); for(let y=0;y<3;y++) for(let x=0;x<2;x++) pixel(data,8,x,y,[x*255,y*80,0,255]);
  pixel(data,8,2,3,[50,100,255,128]); for(let y=1;y<4;y++) for(let x=5;x<7;x++) pixel(data,8,x,y,[255,255,255,255]);

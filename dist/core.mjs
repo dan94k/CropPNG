@@ -105,6 +105,17 @@ export function safeName(name) {
   return (name.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 70) || 'asset');
 }
 
+export function createExportPlan(assets) {
+  const names = new Set();
+  return assets.filter(asset => asset.included).map(asset => {
+    const base = safeName(asset.name);
+    let name = `${base}.png`, counter = 2;
+    while (names.has(name.toLowerCase())) name = `${base}_${counter++}.png`;
+    names.add(name.toLowerCase());
+    return { asset, name };
+  });
+}
+
 const crcTable = Uint32Array.from({ length: 256 }, (_, n) => {
   for (let k = 0; k < 8; k++) n = n & 1 ? 0xedb88320 ^ (n >>> 1) : n >>> 1;
   return n >>> 0;
