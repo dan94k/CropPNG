@@ -12,6 +12,16 @@ python3 -m http.server 4173 --directory dist
 
 Abra http://localhost:4173. É necessário servir os arquivos via HTTP para carregar os módulos JavaScript. Não há instalação nem build.
 
+## Rodar com Docker
+
+```sh
+docker compose up --build -d
+```
+
+Abra http://localhost:4173. Para encerrar, use `docker compose down`.
+
+O arquivo `deploy/zimaos/docker-compose.yml` descreve a instalação no ZimaOS. Ele monta os arquivos estáticos do diretório `/DATA/AppData/croppng/source` e expõe o app na porta 4173. O metadata `x-casaos` cria o atalho **CropPNG** com o ícone incluído na tela inicial.
+
 ## Fluxo
 
 1. Abra um PNG, JPG ou WebP, ou use o exemplo incluído.

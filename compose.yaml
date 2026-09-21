@@ -1,0 +1,11 @@
+name: croppng
+services:
+  croppng:
+    build: .
+    image: croppng:1.0.0
+    container_name: croppng
+    restart: unless-stopped
+    ports:
+      - "4173:8080"
+    security_opt:
+      - no-new-privileges:true
