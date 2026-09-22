@@ -1,4 +1,4 @@
-import { clamp, boundsOf, hasTransparency, selectConnected, detectComponents, removeCornerBackground, safeName, createExportPlan, makeZip } from './core.mjs';
+import { clamp, boundsOf, hasTransparency, selectConnected, detectComponents, removeCornerBackground, safeName, defaultAssetName, createExportPlan, makeZip } from './core.mjs';
 
 const $ = id => document.getElementById(id);
 const image = $('source-image'), overlay = $('overlay'), stage = $('stage');
@@ -147,7 +147,7 @@ function render() { renderCounts(); renderList(); renderOverlay(); renderInspect
 function updateAsset(id, patch, full = true) { state.assets = state.assets.map(a => a.id === id ? { ...a, ...patch } : a); if (full) render(); else { renderOverlay(); renderInspector(); } }
 function newAsset(properties) {
   const id = state.nextId++;
-  return { id, name: `asset_${String(id).padStart(2, '0')}`, included: true, padding: 0, removeBg: false, bgTolerance: 30, ...properties };
+  return { id, name: defaultAssetName(state.filename, id), included: true, padding: 0, removeBg: false, bgTolerance: 30, ...properties };
 }
 function addAsset(properties) { checkpoint(); const asset = newAsset(properties); state.assets.push(asset); state.selected = asset.id; state.points = []; setMode('select'); render(); return asset; }
 function rectangle(a, b) { const x = Math.floor(Math.min(a.x, b.x)), y = Math.floor(Math.min(a.y, b.y)); return { x, y, w: Math.max(1, Math.ceil(Math.max(a.x, b.x)) - x), h: Math.max(1, Math.ceil(Math.max(a.y, b.y)) - y) }; }
@@ -274,7 +274,7 @@ $('asset-name').oninput = () => {
   state.assets = state.assets.map(item => item.id === a.id ? { ...item, name: $('asset-name').value } : item);
   renderList(); renderCounts(); $('selection-status').textContent = `${$('asset-name').value || 'Asset'} · ${a.w} × ${a.h} px`;
 };
-$('asset-name').onchange = () => { const a = current(); if (a) updateAsset(a.id, { name: $('asset-name').value.trim() || `asset_${String(a.id).padStart(2, '0')}` }); };
+$('asset-name').onchange = () => { const a = current(); if (a) updateAsset(a.id, { name: $('asset-name').value.trim() || defaultAssetName(state.filename, a.id) }); };
 for (const key of ['x', 'y', 'w', 'h']) $(`bound-${key}`).onchange = () => {
   const a = current(); if (!a) return;
   const value = Number($(`bound-${key}`).value); if (!Number.isFinite(value)) return renderInspector();

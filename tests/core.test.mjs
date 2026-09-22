@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { writeFile } from 'node:fs/promises';
-import { selectConnected, detectComponents, removeCornerBackground, makeZip, crc32, safeName, createExportPlan } from '../dist/core.mjs';
+import { selectConnected, detectComponents, removeCornerBackground, makeZip, crc32, safeName, defaultAssetName, createExportPlan } from '../dist/core.mjs';
 function pixels(w, h, fill = [0, 0, 0, 0]) { const a = new Uint8ClampedArray(w*h*4); for(let p=0;p<w*h;p++) a.set(fill,p*4); return a; }
 function pixel(a, w, x, y, color) { a.set(color,(y*w+x)*4); }
 test('batch export excludes unchecked assets and prevents filename collisions after sanitization', () => {
@@ -14,6 +14,12 @@ test('batch export excludes unchecked assets and prevents filename collisions af
  assert.deepEqual(plan.map(p => p.name), ['ouro.png', 'OURO_2.png', 'ouro_2_2.png', 'peca.png', 'peca_2.png']);
  assert.deepEqual(assets, before);
  assert.deepEqual(createExportPlan([{ name: 'nenhum', included: false }]), []);
+});
+test('default asset names use the opened file stem and preserve a stable sequence', () => {
+ assert.equal(defaultAssetName('logo.png', 1), 'logo_01');
+ assert.equal(defaultAssetName('Personagem final.v2.webp', 12), 'Personagem final.v2_12');
+ assert.equal(defaultAssetName('.png', 3), 'asset_03');
+ assert.equal(defaultAssetName('', 4), 'asset_04');
 });
 test('alpha components keep multicolor and diagonal-connected sprites, isolate neighbors',()=>{
  const data=pixels(8,6); for(let y=0;y<3;y++) for(let x=0;x<2;x++) pixel(data,8,x,y,[x*255,y*80,0,255]);

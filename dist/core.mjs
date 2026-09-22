@@ -105,6 +105,11 @@ export function safeName(name) {
   return (name.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 70) || 'asset');
 }
 
+export function defaultAssetName(filename, id) {
+  const stem = String(filename || '').trim().replace(/\.[^.]+$/, '').trim() || 'asset';
+  return `${stem}_${String(id).padStart(2, '0')}`;
+}
+
 export function createExportPlan(assets) {
   const names = new Set();
   return assets.filter(asset => asset.included).map(asset => {
